@@ -1,7 +1,5 @@
 import json
 
-import pandas as pd
-
 import plotly
 import plotly.express as px
 
@@ -11,7 +9,7 @@ class LoadedDataFrame(object):
     def __init__(self, df):
         """constructor"""
         self.df = df
-        self.df_head = df.sample(10)
+        self.df_head = df.head(10)
         self.width = 400
         self.height = 400
 
@@ -48,27 +46,45 @@ class LoadedDataFrame(object):
                 col_grouped = col_data.value_counts()
                 fig = px.pie(
                     df, 
-                    values=col_grouped, 
-                    names=col_grouped.index,
-                    width=width, 
-                    height=height
+                    values = col_grouped, 
+                    names = col_grouped.index,
+                    width = width, 
+                    height = height
                 )
-                plot_json = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+                plot_json = json.dumps(
+                    fig, cls = plotly.utils.PlotlyJSONEncoder
+                )
                 charts.append(plot_json)
+
             elif len_col_data <= 10:
                 col_grouped = (
                     df.reset_index()
                     .groupby(col)['index'].count()
                     .to_frame('count').reset_index()
                 )
-                fig = px.bar(col_grouped, x=col, y='count', width=width, height=height)
-                plot_json = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+                fig = px.bar(
+                    col_grouped, 
+                    x = col, 
+                    y = 'count', 
+                    width = width, 
+                    height = height
+                )
+                plot_json = json.dumps(
+                    fig, cls = plotly.utils.PlotlyJSONEncoder
+                )
                 charts.append(plot_json)
+
             elif col_data.dtype != 'object':
-                fig = px.histogram(df, x=col, nbins=10)
-                plot_json = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+                fig = px.histogram(
+                    df, 
+                    x = col, 
+                    nbins = 10
+                )
+                plot_json = json.dumps(
+                    fig, cls = plotly.utils.PlotlyJSONEncoder
+                )
                 charts.append(plot_json)
 
         
-        div_id = ['chart_'+ str(i) for i in range(len(charts))]
-        return div_id, charts
+        charts_id = ['chart_'+ str(i) for i in range(len(charts))]
+        return charts_id, charts
