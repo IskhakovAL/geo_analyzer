@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <!-- Import Plotly (does not have to be from CDN) -->
+	<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+	
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+
+
+<table class="df-table">
+	<thead>
+	    <tr>
+	    	<th></th>
+			{% for heading in headings %}
+			    <th> {{ heading }} </th>
+			{% endfor %}
+ 		</tr>
+
+ 		{% for row in df %}
+	 		<tr>
+	 			{% for item in row %}
+	            	<td>{{ item }}</td>
+	            {% endfor %}
+	        </tr>
+        {% endfor %}
+    </thead>
+</table>
+
+{% for item, id in plot_json|zip(plot_id) %}
+  <div id="plotly-timeseries}"></div>
+    <script>
+      var div = document.createElement("div");
+      div.id = `plotly-timeseries ${{id}}`;
+      document.body.append(div);
+      var graph = {{ item | safe }};
+	  Plotly.plot(`plotly-timeseries ${{id}}`, graph, {});
+	</script>
+{% endfor %}
+
+
+<form method="post">
+    {{ form.hidden_tag() }}
+    {{ form.example }}
+    <button type="submit">Submit</button>
+</form>
+
+
+<iframe srcdoc="{{ m }}"></iframe>
+
+</body>
+</html>
