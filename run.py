@@ -24,53 +24,115 @@ class MultiCheckboxField(SelectMultipleField):
 
 
 class SimpleForm(FlaskForm):
-	example = MultiCheckboxField('Label')
+    example = MultiCheckboxField('Label')
 
 
 @app.route('/', methods=['GET', 'POST'])
 def hello():
-	df = pd.read_csv('datasets/Mall_Customers.csv')
-	# df = pd.DataFrame({
-	#     'Имя': ["Катя", "Вася", "Даша", "Петя"], 
-	#     'Пол': ["Женский", "Мужской", "Женский", "Мужской"],
-	#     'Возраст': [15, 24, 15, 35]
-	# })
-	loaded_df = LoadedDataFrame(df)
+    # TODO: придумать нормальное имя вместо full_df.
+    # full_df = pd.read_csv('datasets/Mall_Customers.csv')
+    # full_df = pd.DataFrame({
+    #     'Имя': ["Катя", "Вася", "Даша", "Петя"],
+    #     'Пол': ["Женский", "Мужской", "Женский", "Мужской"],
+    #     'Возраст': [15, 24, 15, 35]
+    # })
+    full_df = pd.DataFrame({
+        'Имя': ["kate", "ivan", "daria", "petr"],
+        'Пол': ["female", "male", "female", "male"],
+        # 'Возраст': [15, 24, 15, 35]
+    })
+    df = full_df
+    loaded_df = LoadedDataFrame(df)
 
+    folium_map = folium.Map(location=[45.5236, -122.6750])
 
+    forms = []
 
-	folium_map = folium.Map(location=[45.5236, -122.6750])
-    
-	form = SimpleForm()
-	form.example.choices = [('Женский', 'Женский'), ('Мужской', 'Мужской')]
-	if request.method == 'GET':
-		form.example.data = ['Женский', 'Мужской']
-		return render_template(
-				'index.html', 
-				m = folium_map._repr_html_(),
-				headings = loaded_df.get_table_components()[0], 
-				df = loaded_df.get_table_components()[1], 
-				plot_id = loaded_df.get_graphs_components()[0],
-				plot_json = loaded_df.get_graphs_components()[1],
-				form = form
-			)
-	elif request.method == 'POST':
-		if form.validate_on_submit():
-			print(form.example.data)
-			df = df[df['Пол'].isin(form.example.data)]
-			loaded_df = LoadedDataFrame(df)
+    for column in full_df:
+        form = SimpleForm()
+        unique_values = full_df[column].unique()
+        form.example.choices = [(str(uv), uv) for uv in unique_values]
+        # print(form.example.choices)
+        forms.append(form)
 
-			return render_template(
-				'index.html', 
-				headings = loaded_df.get_table_components()[0], 
-				df = loaded_df.get_table_components()[1], 
-				plot_id = loaded_df.get_graphs_components()[0],
-				plot_json = loaded_df.get_graphs_components()[1],
-				form = form
-			)
-		else:
-			print('Errors')
-			print(form.errors)
+    # form = SimpleForm()
+    # form.example.choices = [('Женский', 'Женский'), ('Мужской', 'Мужской')]
+    #
+    # form1 = SimpleForm()
+    # form1.example.choices = [('Альфа', 'Альфа'), ('Омега', 'Омега')]
+
+    if request.method == 'GET':
+        # form.example.data = ['Женский', 'Мужской']
+        # form1.example.data = ['Альфа', 'Омега']
+        for form in forms:
+            form.example.data = [ec[0] for ec in form.example.choices]
+            print(form.example.data)
+
+        return render_template(
+            'index.html',
+            m=folium_map._repr_html_(),
+            headings=loaded_df.get_table_components()[0],
+            df=loaded_df.get_table_components()[1],
+            plot_id=loaded_df.get_graphs_components()[0],
+            plot_json=loaded_df.get_graphs_components()[1],
+            forms=forms
+        )
+    # TODO: кодревью.
+    elif request.method == 'POST':
+        # TODO: убрать костыль (я про forms[0]).
+        selected_data = forms[0].example.data
+        for form in forms:
+            correct_data = [ec[0] for ec in form.example.choices]
+            form.example.data = list(set(selected_data) & set(correct_data))
+
+        # TODO: переименовать переменную.
+        is_okay = True
+        for form in forms:
+            print(form.example.data)
+            print(form.example.choices)
+            if not form.validate_on_submit():
+                print(form.errors)
+                print()
+                is_okay = False
+            else:
+                print('ok')
+
+        if is_okay:
+            print('is okay!')
+            filters = []
+            # TODO: если есть числовой столбец, код умирает. Придумать логику для числовых данных.
+            #  И в целом подумать над возможными типами (чтобы не возникало таких ошибок, это важно).
+            for i in range(len(forms)):
+                print(full_df[full_df.columns[i]])
+                print(forms[i].example.data)
+                filters.append(full_df[full_df.columns[i]].isin(forms[i].example.data))
+                print(filters[i])
+            # TODO: убрать костыль.
+            total_filter = filters[0]
+            for i in range(1, len(filters)):
+                total_filter = total_filter & filters[i]
+            df = full_df[total_filter]
+            loaded_df = LoadedDataFrame(df)
+            print(df)
+
+            return render_template(
+                'index.html',
+                headings=loaded_df.get_table_components()[0],
+                df=loaded_df.get_table_components()[1],
+                plot_id=loaded_df.get_graphs_components()[0],
+                plot_json=loaded_df.get_graphs_components()[1],
+                forms=forms
+            )
+        else:
+            # TODO: изменить вывод на какой-то другой.
+            return render_template(
+                'index.html',
+                headings=loaded_df.get_table_components()[0],
+                df=loaded_df.get_table_components()[1],
+                plot_id=loaded_df.get_graphs_components()[0],
+                plot_json=loaded_df.get_graphs_components()[1],
+                forms=forms
+            )
 
 
 if __name__ == '__main__':

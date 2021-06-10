@@ -43,8 +43,10 @@
 
 
 <form method="post">
-    {{ form.hidden_tag() }}
-    {{ form.example }}
+	{% for form in forms %}
+		{{ form.hidden_tag() }}
+    	{{ form.example }}
+	{% endfor %}
     <button type="submit">Submit</button>
 </form>
 
