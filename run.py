@@ -22,7 +22,7 @@ def hello():
     full_df = pd.DataFrame({
         'Имя': ["Катя", "Вася", "Даша", "Петя"],
         'Пол': ["Женский", "Мужской", "Женский", "Мужской"],
-        'Возраст': [15, 24, 15, 35]
+        # 'Возраст': [15, 24, 15, 35]
     })
     # full_df = pd.DataFrame({
     #     'Имя': ["kate", "ivan", "daria", "petr"],
@@ -49,17 +49,16 @@ def hello():
         )
     # TODO: кодревью.
     elif request.method == 'POST':
-        # TODO: убрать костыль (я про forms[0]).
-        selected_data = forms[0].example.data
+        selected_data = request.form.getlist('checkbox')
         for form in forms:
-            correct_data = [ec[0] for ec in form.example.choices]
-            form.example.data = list(set(selected_data) & set(correct_data))
+            correct_data = [ec[0] for ec in form.checkbox.choices]
+            form.checkbox.data = list(set(selected_data) & set(correct_data))
 
         # TODO: переименовать переменную.
         is_okay = True
         for form in forms:
-            print(form.example.data)
-            print(form.example.choices)
+            # print(form.checkbox.data)
+            # print(form.checkbox.choices)
             if not form.validate_on_submit():
                 print(form.errors)
                 print()
@@ -74,8 +73,8 @@ def hello():
             #  И в целом подумать над возможными типами (чтобы не возникало таких ошибок, это важно).
             for i in range(len(forms)):
                 print(full_df[full_df.columns[i]])
-                print(forms[i].example.data)
-                filters.append(full_df[full_df.columns[i]].isin(forms[i].example.data))
+                print(forms[i].checkbox.data)
+                filters.append(full_df[full_df.columns[i]].isin(forms[i].checkbox.data))
                 print(filters[i])
             # TODO: убрать костыль.
             total_filter = filters[0]
