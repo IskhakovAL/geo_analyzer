@@ -4,8 +4,10 @@ from flask import render_template
 import pandas as pd
 
 import folium
+from folium.plugins import HeatMap
 
 from loaded_data_frame import LoadedDataFrame
+
 
 SECRET_KEY = 'development'
 app = Flask(__name__)
@@ -15,27 +17,38 @@ app.template_folder = 'templates'
 app.jinja_env.filters['zip'] = zip
 
 
+def plot_heat_map(df):
+    y_center, x_center = 55.7522, 37.6156
+
+    folium_map = folium.Map(location=[y_center, x_center],
+                            tiles = "openstreetmap",
+                            zoom_start = 8,
+                            max_zoom=12)
+
+    heat_data = [[row['latitude'], row['longitude']] for index, row in df.iterrows()]
+    HeatMap(heat_data, min_opacity=0.3).add_to(folium_map)
+
+    return folium_map
+
+
 @app.route('/', methods=['GET', 'POST'])
 def hello():
     # TODO: придумать нормальное имя вместо full_df.
-    # full_df = pd.read_csv('datasets/Mall_Customers.csv')
     full_df = pd.DataFrame({
         'Имя': ["Катя", "Вася", "Даша", "Петя"],
         'Пол': ["Женский", "Мужской", "Женский", "Мужской"],
-        # 'Возраст': [15, 24, 15, 35]
+        'Возраст': [15, 24, 15, 35],
+        'latitude': [55.4522, 55.1522, 55.9522, 55.3522],
+        'longitude': [37.7156, 37.1156, 37.3156, 37.5156]
     })
-    # full_df = pd.DataFrame({
-    #     'Имя': ["kate", "ivan", "daria", "petr"],
-    #     'Пол': ["female", "male", "female", "male"],
-    #     # 'Возраст': [15, 24, 15, 35]
-    # })
+
     df = full_df
+
     loaded_df = LoadedDataFrame(df)
 
-    folium_map = folium.Map(location=[45.5236, -122.6750])
+    folium_map = plot_heat_map(df)
 
     forms = loaded_df.get_forms_components()
-
 
     if request.method == 'GET':
         return render_template(
@@ -84,8 +97,11 @@ def hello():
             loaded_df = LoadedDataFrame(df)
             print(df)
 
+            folium_map = plot_heat_map(df)
+
             return render_template(
                 'index.html',
+                m=folium_map._repr_html_(),
                 headings=loaded_df.get_table_components()[0],
                 df=loaded_df.get_table_components()[1],
                 plot_id=loaded_df.get_graphs_components()[0],

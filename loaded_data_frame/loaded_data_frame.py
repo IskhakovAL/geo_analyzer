@@ -90,7 +90,9 @@ class LoadedDataFrame(object):
                 fig = px.histogram(
                     df,
                     x=col,
-                    nbins=10
+                    nbins=10,
+                    width=width,
+                    height=height
                 )
                 plot_json = json.dumps(
                     fig, cls=plotly.utils.PlotlyJSONEncoder
@@ -112,9 +114,10 @@ class LoadedDataFrame(object):
             col_data_unique = col_data.unique()
             len_col_data = len(col_data_unique)
 
-            form = CheckboxForm()
-            form.checkbox.choices = [(str(data), data) for data in col_data_unique]
-            form.checkbox.data = [str(data) for data in col_data_unique]
-            forms.append(form)
+            if len_col_data <= 10:
+                form = CheckboxForm()
+                form.checkbox.choices = [(str(data), data) for data in col_data_unique]
+                form.checkbox.data = [str(data) for data in col_data_unique]
+                forms.append(form)
 
         return forms
