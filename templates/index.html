@@ -45,7 +45,7 @@
 <form method="post">
 	{% for form in forms %}
 		{{ form.hidden_tag() }}
-    	{{ form.example }}
+    	{{ form.checkbox }}
 	{% endfor %}
     <button type="submit">Submit</button>
 </form>
