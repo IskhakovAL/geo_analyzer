@@ -34,16 +34,13 @@ def plot_heat_map(df):
 @app.route('/', methods=['GET', 'POST'])
 def hello():
     # TODO: придумать нормальное имя вместо full_df.
-    full_df = pd.DataFrame({
+    df = pd.DataFrame({
         'Имя': ["Катя", "Вася", "Даша", "Петя"],
         'Пол': ["Женский", "Мужской", "Женский", "Мужской"],
         'Возраст': [15, 24, 15, 35],
         'latitude': [55.4522, 55.1522, 55.9522, 55.3522],
         'longitude': [37.7156, 37.1156, 37.3156, 37.5156]
     })
-
-    df = full_df
-
     loaded_df = LoadedDataFrame(df)
 
     folium_map = plot_heat_map(df)
@@ -85,19 +82,18 @@ def hello():
             # TODO: если есть числовой столбец, код умирает. Придумать логику для числовых данных.
             #  И в целом подумать над возможными типами (чтобы не возникало таких ошибок, это важно).
             for i in range(len(forms)):
-                print(full_df[full_df.columns[i]])
+                print(df[df.columns[i]])
                 print(forms[i].checkbox.data)
-                filters.append(full_df[full_df.columns[i]].isin(forms[i].checkbox.data))
+                filters.append(df[df.columns[i]].isin(forms[i].checkbox.data))
                 print(filters[i])
             # TODO: убрать костыль.
             total_filter = filters[0]
             for i in range(1, len(filters)):
                 total_filter = total_filter & filters[i]
-            df = full_df[total_filter]
-            loaded_df = LoadedDataFrame(df)
-            print(df)
+            loaded_df = LoadedDataFrame(df[total_filter])
+            print(df[total_filter])
 
-            folium_map = plot_heat_map(df)
+            folium_map = plot_heat_map(df[total_filter])
 
             return render_template(
                 'index.html',
