@@ -114,6 +114,7 @@ class LoadedDataFrame(object):
 
             form = CheckboxForm()
             form.checkbox.choices = [(str(data), data) for data in col_data_unique]
+            form.checkbox.data = [str(data) for data in col_data_unique]
             forms.append(form)
 
         return forms

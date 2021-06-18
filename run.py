@@ -38,12 +38,6 @@ def hello():
 
 
     if request.method == 'GET':
-        # form.example.data = ['Женский', 'Мужской']
-        # form1.example.data = ['Альфа', 'Омега']
-        for form in forms:
-            form.checkbox.data = [ec[0] for ec in form.checkbox.choices]
-            print(form.checkbox.data)
-
         return render_template(
             'index.html',
             m=folium_map._repr_html_(),
