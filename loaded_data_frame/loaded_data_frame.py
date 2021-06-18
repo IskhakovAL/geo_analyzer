@@ -1,7 +1,22 @@
+# data
 import json
 
+# charts
 import plotly
 import plotly.express as px
+
+# forms
+from flask_wtf import FlaskForm
+from wtforms import widgets, SelectMultipleField
+
+
+class MultiCheckboxField(SelectMultipleField):
+    widget = widgets.ListWidget(prefix_label=True)
+    option_widget = widgets.CheckboxInput()
+
+
+class CheckboxForm(FlaskForm):
+    checkbox = MultiCheckboxField('Label')
 
 
 class LoadedDataFrame(object):
@@ -84,3 +99,21 @@ class LoadedDataFrame(object):
 
         charts_id = ['chart_' + str(i) for i in range(len(charts))]
         return charts_id, charts
+
+    def get_forms_components(self):
+        """docstring"""
+        forms = []
+
+        df = self.df
+        df_columns = self.df.columns
+
+        for col in df_columns:
+            col_data = df[col]
+            col_data_unique = col_data.unique()
+            len_col_data = len(col_data_unique)
+
+            form = CheckboxForm()
+            form.checkbox.choices = [(str(data), data) for data in col_data_unique]
+            forms.append(form)
+
+        return forms

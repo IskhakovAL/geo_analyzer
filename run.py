@@ -1,9 +1,6 @@
 from flask import Flask, request
 from flask import render_template
 
-from flask_wtf import FlaskForm
-from wtforms import widgets, SelectMultipleField
-
 import pandas as pd
 
 import folium
@@ -18,55 +15,34 @@ app.template_folder = 'templates'
 app.jinja_env.filters['zip'] = zip
 
 
-class MultiCheckboxField(SelectMultipleField):
-    widget = widgets.ListWidget(prefix_label=True)
-    option_widget = widgets.CheckboxInput()
-
-
-class SimpleForm(FlaskForm):
-    example = MultiCheckboxField('Label')
-
-
 @app.route('/', methods=['GET', 'POST'])
 def hello():
     # TODO: придумать нормальное имя вместо full_df.
     # full_df = pd.read_csv('datasets/Mall_Customers.csv')
-    # full_df = pd.DataFrame({
-    #     'Имя': ["Катя", "Вася", "Даша", "Петя"],
-    #     'Пол': ["Женский", "Мужской", "Женский", "Мужской"],
-    #     'Возраст': [15, 24, 15, 35]
-    # })
     full_df = pd.DataFrame({
-        'Имя': ["kate", "ivan", "daria", "petr"],
-        'Пол': ["female", "male", "female", "male"],
-        # 'Возраст': [15, 24, 15, 35]
+        'Имя': ["Катя", "Вася", "Даша", "Петя"],
+        'Пол': ["Женский", "Мужской", "Женский", "Мужской"],
+        'Возраст': [15, 24, 15, 35]
     })
+    # full_df = pd.DataFrame({
+    #     'Имя': ["kate", "ivan", "daria", "petr"],
+    #     'Пол': ["female", "male", "female", "male"],
+    #     # 'Возраст': [15, 24, 15, 35]
+    # })
     df = full_df
     loaded_df = LoadedDataFrame(df)
 
     folium_map = folium.Map(location=[45.5236, -122.6750])
 
-    forms = []
+    forms = loaded_df.get_forms_components()
 
-    for column in full_df:
-        form = SimpleForm()
-        unique_values = full_df[column].unique()
-        form.example.choices = [(str(uv), uv) for uv in unique_values]
-        # print(form.example.choices)
-        forms.append(form)
-
-    # form = SimpleForm()
-    # form.example.choices = [('Женский', 'Женский'), ('Мужской', 'Мужской')]
-    #
-    # form1 = SimpleForm()
-    # form1.example.choices = [('Альфа', 'Альфа'), ('Омега', 'Омега')]
 
     if request.method == 'GET':
         # form.example.data = ['Женский', 'Мужской']
         # form1.example.data = ['Альфа', 'Омега']
         for form in forms:
-            form.example.data = [ec[0] for ec in form.example.choices]
-            print(form.example.data)
+            form.checkbox.data = [ec[0] for ec in form.checkbox.choices]
+            print(form.checkbox.data)
 
         return render_template(
             'index.html',
