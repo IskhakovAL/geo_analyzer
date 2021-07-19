@@ -9,6 +9,10 @@ import plotly.express as px
 from flask_wtf import FlaskForm
 from wtforms import widgets, SelectMultipleField
 
+# map
+import folium
+from folium.plugins import HeatMap
+
 
 class MultiCheckboxField(SelectMultipleField):
     widget = widgets.ListWidget(prefix_label=True)
@@ -20,17 +24,15 @@ class CheckboxForm(FlaskForm):
 
 
 class LoadedDataFrame(object):
-    """docstring"""
 
     def __init__(self, df):
-        """constructor"""
         self.df = df
-        self.df_head = df.head(10)
+        self.df_head = df.head(5)
         self.width = 400
         self.height = 400
 
     def get_table_components(self):
-        """docstring"""
+        """Возвращает первые пять строк датафрейма."""
         df_head = self.df_head
         columns = df_head.columns.tolist()
         values = df_head.values.tolist()
@@ -41,33 +43,46 @@ class LoadedDataFrame(object):
         return columns, values
 
     def get_graphs_components(self):
-        """docstring"""
+        """Возвращает графики."""
         charts = []
 
         df = self.df
-        df_columns = self.df.columns
+        # будем работать со всеми колонками, за исключением широты/долготы
+        df_columns = self.df.drop(['latitude', 'longitude'], axis=1).columns
 
         width = self.width
         height = self.height
 
         for col in df_columns:
+            # для каждой из колонок найдем количество уникальных значений
             col_data = df[col]
             len_col_data = len(col_data.unique())
 
+            def round_str(s):
+                """Функция для сокращения строк."""
+                if len(s) <= 30:
+                    return s
+                return s[:30].strip() + '...'
+
+            # если уникальных значений в колонке меньше 3, создадим круговую диаграмму
             if len_col_data <= 3:
                 col_grouped = col_data.value_counts()
+                col_names = [round_str(str(x)) for x in col_grouped.index]
                 fig = px.pie(
                     df,
                     values=col_grouped,
-                    names=col_grouped.index,
+                    names=col_names,
                     width=width,
                     height=height
                 )
+                fig.update_layout(showlegend=False,
+                                  title=col)
                 plot_json = json.dumps(
                     fig, cls=plotly.utils.PlotlyJSONEncoder
                 )
                 charts.append(plot_json)
 
+            # если уникальных значений в колонке меньше 10, создадим столбчатую диаграмму
             elif len_col_data <= 10:
                 col_grouped = (
                     df.reset_index()
@@ -81,6 +96,8 @@ class LoadedDataFrame(object):
                     width=width,
                     height=height
                 )
+                fig.update_layout(showlegend=False,
+                                  title=col)
                 plot_json = json.dumps(
                     fig, cls=plotly.utils.PlotlyJSONEncoder
                 )
@@ -94,6 +111,8 @@ class LoadedDataFrame(object):
                     width=width,
                     height=height
                 )
+                fig.update_layout(showlegend=False,
+                                  title=col)
                 plot_json = json.dumps(
                     fig, cls=plotly.utils.PlotlyJSONEncoder
                 )
@@ -103,21 +122,39 @@ class LoadedDataFrame(object):
         return charts_id, charts
 
     def get_forms_components(self):
-        """docstring"""
+        """Возвращает формы с чекбоксами."""
         forms = []
 
         df = self.df
-        df_columns = self.df.columns
+        # будем работать со всеми колонками, за исключением широты/долготы
+        df_columns = self.df.drop(['latitude', 'longitude'], axis=1).columns
 
         for col in df_columns:
+            # для каждой из колонок найдем уникальные значения и их количество
             col_data = df[col]
             col_data_unique = col_data.unique()
             len_col_data = len(col_data_unique)
 
+            # если уникальных значений в колонке меньше 10, создадим форму
             if len_col_data <= 10:
-                form = CheckboxForm()
+                form = CheckboxForm(col)
+                form.checkbox.name = col
                 form.checkbox.choices = [(str(data), data) for data in col_data_unique]
                 form.checkbox.data = [str(data) for data in col_data_unique]
                 forms.append(form)
 
         return forms
+
+    def get_heat_map(self):
+        """Returns heat map."""
+        y_center, x_center = 55.7522, 37.6156
+
+        folium_map = folium.Map(location=[y_center, x_center],
+                                tiles="openstreetmap",
+                                zoom_start=8,
+                                max_zoom=12)
+
+        heat_data = [[row['latitude'], row['longitude']] for index, row in self.df.iterrows()]
+        HeatMap(heat_data, min_opacity=0.3).add_to(folium_map)
+
+        return folium_map
